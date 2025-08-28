@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: 39460f06c7d6a25459bdfcf49f99a801
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 229716
-  packageName: Realistic Tree Pack 1
-  packageVersion: 1.0
-  assetPath: Assets/Realistic Tree/Prefabs/URP/Chestnut/Chestnut 2.prefab
-  uploadId: 519026
+version https://git-lfs.github.com/spec/v1
+oid sha256:6c9fb168daed503a63bff3a998feb7a421350defae4dccebd8c1c328cdc3075e
+size 362
