@@ -48,7 +48,11 @@
     ],
     "m_Keywords": [],
     "m_Dropdowns": [],
-    "m_CategoryData": [],
+    "m_CategoryData": [
+        {
+            "m_Id": "7dc9e51923e441bd9dea50736e041a7a"
+        }
+    ],
     "m_Nodes": [
         {
             "m_Id": "66b5403656f94d68bc8d05cb7c04b9eb"
@@ -3578,6 +3582,57 @@
         "x": 0.0,
         "y": 1.0
     }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.CategoryData",
+    "m_ObjectId": "7dc9e51923e441bd9dea50736e041a7a",
+    "m_Name": "",
+    "m_ChildObjectList": [
+        {
+            "m_Id": "bfb8accc76d9413bad4df77aa898cfaf"
+        },
+        {
+            "m_Id": "118e71b9c10c4eed91eea60a3ba568b1"
+        },
+        {
+            "m_Id": "ffdb7414286146bb8d61d59a32adb117"
+        },
+        {
+            "m_Id": "a45823b65a1f4c08986ef1b9e2ad6ee6"
+        },
+        {
+            "m_Id": "3980026d1c404b92a21addfd4e81831e"
+        },
+        {
+            "m_Id": "abcfe820995d418eacb91b7a44f21b98"
+        },
+        {
+            "m_Id": "979cf947040448c7a86ad67abd167c19"
+        },
+        {
+            "m_Id": "b0ddedae341d4c7ba1d429299f3078ea"
+        },
+        {
+            "m_Id": "16459bbb1d07443993d6e5d2236b6dd1"
+        },
+        {
+            "m_Id": "333cf2ba62504042abfa527409660449"
+        },
+        {
+            "m_Id": "682f99ec21134f4fae0c96f53991898e"
+        },
+        {
+            "m_Id": "7c4b0ab460c949e098609f36717c4248"
+        },
+        {
+            "m_Id": "0f54143eb8ff472192a294b030d8887d"
+        },
+        {
+            "m_Id": "2f50a0630c94441fb682cddfa70cadaf"
+        }
+    ]
 }
 
 {
