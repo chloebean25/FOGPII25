@@ -6,4 +6,8 @@ public class Shotgun : Weapon
     {
         Debug.Log("Shot Buck shot?");
     }
+    public void Equiped()
+    {
+        Debug.Log("Equiped: " + gameObject.name);
+    }
 }
