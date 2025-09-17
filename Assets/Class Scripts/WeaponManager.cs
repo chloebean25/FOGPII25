@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+#if UNITY_EDITOR
+using UnityEditor;
 
 [CustomEditor(typeof(WeaponManager))]
 public class WeaponManagerEditor : Editor
@@ -23,7 +25,7 @@ public class WeaponManagerEditor : Editor
 
     }
 }
-
+#endif
 public class WeaponManager : MonoBehaviour
 {
     public List<Weapon> weapons;
