@@ -1,10 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-
 public class PlayerMovement : MonoBehaviour
 {
-   private Rigidbody rb;
+    private Rigidbody rb;
 
     [Header("Camera")]
     public Camera playerCamera;
@@ -47,20 +46,22 @@ public class PlayerMovement : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         originalScale = transform.localScale;
 
-       if (!unlimitedSprint)
-    {
-        sprintRemaining = sprintDuration;
-        sprintCooldownReset = sprintCooldown;
-
-        if  (sprintSlider != null)
+        if (!unlimitedSprint)
         {
-         sprintSlider.minValue = 0f;
-         sprintSlider.maxValue = sprintDuration;
-         sprintSlider.value = sprintDuration;
+            sprintRemaining = sprintDuration;
+            sprintCooldownReset = sprintCooldown;
+
+            if (sprintSlider != null)
+            {
+                sprintSlider.minValue = 0f;
+                sprintSlider.maxValue = 1f; 
+                sprintSlider.value = 1f;
+            }
         }
     }
-    }
-    private void Start(){
+
+    private void Start()
+    {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
@@ -88,70 +89,102 @@ public class PlayerMovement : MonoBehaviour
         }
 
         CheckGround();
+
+        if (KeyPadManager.Instance != null && KeyPadManager.Instance.isOpen)
+            return;
     }
 
     private void FixedUpdate()
     {
-        // Movement
-        Vector3 targetVelocity = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
+        
+        Vector3 input = new Vector3(Input.GetAxis("Horizontal"), 0f, Input.GetAxis("Vertical"));
+        Vector3 camForward = playerCamera.transform.forward;
+        Vector3 camRight = playerCamera.transform.right;
 
-        // Sprint
-        if (Input.GetKey(sprintKey) && sprintRemaining > 0f && !isSprintCooldown)
+        
+        camForward.y = 0f;
+        camRight.y = 0f;
+        camForward.Normalize();
+        camRight.Normalize();
+
+        Vector3 moveDir = camForward * input.z + camRight * input.x;
+
+        Vector3 targetVelocity;
+
+        
+        if (!unlimitedSprint)
         {
-            targetVelocity = transform.TransformDirection(targetVelocity) * sprintSpeed;
-            isSprinting = true;
-
-            if (!unlimitedSprint)
+            
+            if (isSprintCooldown)
             {
+                sprintCooldown -= Time.fixedDeltaTime;
+                if (sprintCooldown <= 0f)
+                {
+                    isSprintCooldown = false;
+                    sprintCooldown = sprintCooldownReset;
+                }
+            }
+
+            if (Input.GetKey(sprintKey) && sprintRemaining > 0f && !isSprintCooldown)
+            {
+                targetVelocity = transform.TransformDirection(input) * sprintSpeed;
+                isSprinting = true;
+
                 sprintRemaining -= Time.fixedDeltaTime;
                 sprintRemaining = Mathf.Clamp(sprintRemaining, 0f, sprintDuration);
+
+                
+                if (sprintRemaining <= 0f)
+                {
+                    isSprinting = false;
+                    isSprintCooldown = true;
+                }
+            }
+            else
+            {
+                targetVelocity = moveDir * (isSprinting ? sprintSpeed : walkSpeed);
+                isSprinting = false;
+
+                
+                if (!isSprintCooldown)
+                {
+                    sprintRemaining = Mathf.Clamp(sprintRemaining + Time.fixedDeltaTime, 0f, sprintDuration);
+                }
+            }
+
+            
+            if (useSprintBar && sprintSlider != null)
+            {
+                sprintSlider.value = sprintRemaining / sprintDuration;
             }
         }
         else
         {
-            targetVelocity = transform.TransformDirection(targetVelocity) * walkSpeed;
-            isSprinting = false;
-
-            if (!unlimitedSprint && !isSprintCooldown)
+            
+            if (Input.GetKey(sprintKey))
             {
-                sprintRemaining = Mathf.Clamp(sprintRemaining + Time.fixedDeltaTime, 0f, sprintDuration);
+                targetVelocity = transform.TransformDirection(input) * sprintSpeed;
+                isSprinting = true;
             }
-        }
-    
-        // Update sprint bar (Slider version)
-        if (useSprintBar && !unlimitedSprint && sprintSlider != null)
-        {
-            sprintSlider.value = sprintRemaining;
-        }
-
-
-        // Sprint cooldown
-        if (isSprintCooldown)
-        {
-            sprintCooldown -= Time.fixedDeltaTime;
-            if (sprintCooldown <= 0f)
+            else
             {
-                isSprintCooldown = false;
-                sprintCooldown = sprintCooldownReset;
+                targetVelocity = transform.TransformDirection(input) * walkSpeed;
+                isSprinting = false;
+            }
+
+            if (useSprintBar && sprintSlider != null)
+            {
+                sprintSlider.value = 1f;
             }
         }
 
-        // Apply velocity change
+        
         Vector3 velocity = rb.linearVelocity;
         Vector3 velocityChange = (targetVelocity - velocity);
         velocityChange.x = Mathf.Clamp(velocityChange.x, -maxVelocityChange, maxVelocityChange);
         velocityChange.z = Mathf.Clamp(velocityChange.z, -maxVelocityChange, maxVelocityChange);
         velocityChange.y = 0;
         rb.AddForce(velocityChange, ForceMode.VelocityChange);
-
-        // Update sprint bar
-        if (useSprintBar && !unlimitedSprint && sprintSlider != null)
-        {
-         if (useSprintBar && !unlimitedSprint && sprintSlider != null)
-            {
-                sprintSlider.value = sprintRemaining;
-            }
-        }
     }
 
     private void Jump()

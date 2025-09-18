@@ -7,6 +7,7 @@ public class KeyPadManager : MonoBehaviour
 
     public GameObject keypadUI;
     public TMP_Text inputText;
+    public MonoBehaviour cameraScript; 
 
     [Header("Settings")]
     public string correctCode = "8457";
@@ -22,7 +23,7 @@ public class KeyPadManager : MonoBehaviour
     }
 
     private void Update(){
-        if(isOpen && Input.GetKeyDown(KeyCode.Escape)){
+        if(isOpen && Input.GetKeyDown(KeyCode.Backspace)){
             CloseKeypad();
         }
     }
@@ -54,6 +55,7 @@ public class KeyPadManager : MonoBehaviour
         keypadUI.SetActive(true);
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        cameraScript.enabled = false;
         Debug.Log(">>> Keypad OPEN triggered");
         
     }
@@ -62,6 +64,7 @@ public class KeyPadManager : MonoBehaviour
         keypadUI.SetActive(false);
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        cameraScript.enabled = true;
         ClearInput();
     }
 }

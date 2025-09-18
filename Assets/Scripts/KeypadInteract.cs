@@ -5,7 +5,7 @@ public class KeypadInteract : MonoBehaviour
     private bool isPlayerNear = false;
 
     void Update(){
-        if (isPlayerNear && Input.GetKeyDown(KeyCode.E)){
+        if (isPlayerNear && Input.GetKeyDown(KeyCode.F)){
             KeyPadManager.Instance.OpenKeypad();
         }
     }
