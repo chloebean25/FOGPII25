@@ -14,7 +14,6 @@ public class TextDisplay : MonoBehaviour
     void OnTriggerStay(Collider player){
         if(player.gameObject.tag=="Player"){
             displayText.SetActive(true);
-            StartCoroutine("WaitForSec");
             if(Input.GetKeyDown(KeyCode.F)){
                 responseText.SetActive(true);
                 Debug.Log("You pressed F");
@@ -22,8 +21,7 @@ public class TextDisplay : MonoBehaviour
         }
     }
 
-    IEnumerator WaitForSec(){
-        yield return new WaitForSeconds(5);
+    void OnTriggerExit(Collider player){
         displayText.SetActive(false);
         responseText.SetActive(false);
     }

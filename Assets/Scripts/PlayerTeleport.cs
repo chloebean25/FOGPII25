@@ -14,15 +14,13 @@ public class PlayerTeleport : MonoBehaviour
     void OnTriggerStay(Collider player){
         if(player.gameObject.tag=="Player"){
             displayText.SetActive(true);
-            StartCoroutine("WaitForSec");
             if(Input.GetKeyDown(KeyCode.F)){
                 player.transform.position = teleportSpot.position;
 
             }
         }
     }
-    IEnumerator WaitForSec(){
-        yield return new WaitForSeconds(5);
+    void OnTriggerExit(Collider player){
         displayText.SetActive(false);
     }
 }

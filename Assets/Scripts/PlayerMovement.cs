@@ -90,8 +90,7 @@ public class PlayerMovement : MonoBehaviour
 
         CheckGround();
 
-        if (KeyPadManager.Instance != null && KeyPadManager.Instance.isOpen)
-            return;
+        
     }
 
     private void FixedUpdate()
