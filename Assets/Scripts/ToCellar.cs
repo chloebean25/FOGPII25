@@ -14,7 +14,7 @@ public class ToCellar : MonoBehaviour
         if(other.gameObject.CompareTag("Player")&& pincersPlayer.activeSelf){
             breakText.SetActive(true);
             if(Input.GetKey(KeyCode.F)){
-                SceneManager.LoadScene("MenuScreen");
+                SceneManager.LoadScene("Cellar");
             }
             
         }
