@@ -11,5 +11,11 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Farm.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/Cellar.unity
+    guid: 0d32a6152fc701245b60a772668eb248
+  - enabled: 1
+    path: Assets/Scenes/Farm2.unity
+    guid: 1c8c5818d345de14fb8369706245fd6a
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

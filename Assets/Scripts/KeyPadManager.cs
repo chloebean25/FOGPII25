@@ -6,10 +6,8 @@ public class KeyPadManager : MonoBehaviour
     public static KeyPadManager Instance;
 
     public GameObject keypadUI;
-    public TMP_Text inputText;
-    public MonoBehaviour cameraScript; 
-
-    [Header("Settings")]
+    public TMP_Text inputText; 
+    public PlayerMovement playerMovement; 
     public string correctCode = "8457";
     public Transform teleportSpot;
     public GameObject player;
@@ -17,55 +15,79 @@ public class KeyPadManager : MonoBehaviour
     private string currentInput = "";
     public bool isOpen = false;
 
-    private void Awake(){
-        Instance =this;
+    private void Awake()
+    {
+        Instance = this;
         keypadUI.SetActive(false);
     }
 
-    private void Update(){
-        if(isOpen && Input.GetKeyDown(KeyCode.Backspace)){
+    private void Update()
+    {
+        if (isOpen && Input.GetKeyDown(KeyCode.Backspace))
+        {
             CloseKeypad();
         }
     }
 
-    public void AddDigit(string digit){
-        if(currentInput.Length <10){
+    public void AddDigit(string digit)
+    {
+        if (currentInput.Length < 10)
+        {
             currentInput += digit;
-            inputText.text  = currentInput;
+            inputText.text = currentInput;
         }
     }
 
-    public void ClearInput(){
-        currentInput="";
-        inputText.text ="";
+    public void ClearInput()
+    {
+        currentInput = "";
+        inputText.text = "";
     }
 
-    public void SubmitCode(){
-        if(currentInput== correctCode){
+    public void SubmitCode()
+    {
+        if (currentInput == correctCode)
+        {
             player.transform.position = teleportSpot.position;
             CloseKeypad();
         }
-        else{
+        else
+        {
             ClearInput();
         }
     }
 
-    public void OpenKeypad(){
+    public void OpenKeypad()
+    {
+        if (isOpen) return;
+
         isOpen = true;
         keypadUI.SetActive(true);
+
+        
+        if (playerMovement != null)
+            playerMovement.LockInput(true);
+
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        cameraScript.enabled = false;
+
         Debug.Log(">>> Keypad OPEN triggered");
-        
     }
-    public void CloseKeypad(){
+
+    public void CloseKeypad()
+    {
+        if (!isOpen) return;
+
         isOpen = false;
         keypadUI.SetActive(false);
+
+        
+        if (playerMovement != null)
+            playerMovement.LockInput(false);
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        cameraScript.enabled = true;
+
         ClearInput();
     }
 }
-

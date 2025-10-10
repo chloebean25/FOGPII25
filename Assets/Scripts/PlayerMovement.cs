@@ -28,6 +28,7 @@ public class PlayerMovement : MonoBehaviour
     private bool isSprinting = false;
     private bool isSprintCooldown = false;
     private float sprintCooldownReset;
+    private bool canSprint = true; 
 
     [Header("Jump")]
     public KeyCode jumpKey = KeyCode.Space;
@@ -40,6 +41,9 @@ public class PlayerMovement : MonoBehaviour
     public float speedReduction = 0.5f;
     private Vector3 originalScale;
     private bool isCrouched = false;
+
+    [HideInInspector]
+    public bool inputLocked = false; 
 
     private void Awake()
     {
@@ -58,6 +62,9 @@ public class PlayerMovement : MonoBehaviour
                 sprintSlider.value = 1f;
             }
         }
+
+        
+        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
     }
 
     private void Start()
@@ -68,6 +75,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
+        if (inputLocked) return; 
+
         // Camera
         yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
         pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
@@ -89,18 +98,16 @@ public class PlayerMovement : MonoBehaviour
         }
 
         CheckGround();
-
-        
     }
 
     private void FixedUpdate()
     {
-        
+        if (inputLocked) return; 
+
         Vector3 input = new Vector3(Input.GetAxis("Horizontal"), 0f, Input.GetAxis("Vertical"));
         Vector3 camForward = playerCamera.transform.forward;
         Vector3 camRight = playerCamera.transform.right;
 
-        
         camForward.y = 0f;
         camRight.y = 0f;
         camForward.Normalize();
@@ -110,21 +117,19 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 targetVelocity;
 
-        
         if (!unlimitedSprint)
         {
             
-            if (isSprintCooldown)
+            if (!canSprint)
             {
-                sprintCooldown -= Time.fixedDeltaTime;
-                if (sprintCooldown <= 0f)
-                {
-                    isSprintCooldown = false;
-                    sprintCooldown = sprintCooldownReset;
-                }
+                sprintRemaining += Time.fixedDeltaTime; 
+                sprintRemaining = Mathf.Clamp(sprintRemaining, 0f, sprintDuration);
+
+                if (sprintRemaining >= sprintDuration)
+                    canSprint = true; 
             }
 
-            if (Input.GetKey(sprintKey) && sprintRemaining > 0f && !isSprintCooldown)
+            if (Input.GetKey(sprintKey) && sprintRemaining > 0f && canSprint)
             {
                 targetVelocity = transform.TransformDirection(input) * sprintSpeed;
                 isSprinting = true;
@@ -132,11 +137,10 @@ public class PlayerMovement : MonoBehaviour
                 sprintRemaining -= Time.fixedDeltaTime;
                 sprintRemaining = Mathf.Clamp(sprintRemaining, 0f, sprintDuration);
 
-                
                 if (sprintRemaining <= 0f)
                 {
                     isSprinting = false;
-                    isSprintCooldown = true;
+                    canSprint = false; 
                 }
             }
             else
@@ -144,14 +148,13 @@ public class PlayerMovement : MonoBehaviour
                 targetVelocity = moveDir * (isSprinting ? sprintSpeed : walkSpeed);
                 isSprinting = false;
 
-                
-                if (!isSprintCooldown)
+                if (canSprint)
                 {
-                    sprintRemaining = Mathf.Clamp(sprintRemaining + Time.fixedDeltaTime, 0f, sprintDuration);
+                    sprintRemaining += Time.fixedDeltaTime;
+                    sprintRemaining = Mathf.Clamp(sprintRemaining, 0f, sprintDuration);
                 }
             }
 
-            
             if (useSprintBar && sprintSlider != null)
             {
                 sprintSlider.value = sprintRemaining / sprintDuration;
@@ -159,7 +162,6 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            
             if (Input.GetKey(sprintKey))
             {
                 targetVelocity = transform.TransformDirection(input) * sprintSpeed;
@@ -177,7 +179,6 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        
         Vector3 velocity = rb.linearVelocity;
         Vector3 velocityChange = (targetVelocity - velocity);
         velocityChange.x = Mathf.Clamp(velocityChange.x, -maxVelocityChange, maxVelocityChange);
@@ -217,5 +218,15 @@ public class PlayerMovement : MonoBehaviour
     {
         Vector3 origin = new Vector3(transform.position.x, transform.position.y - (transform.localScale.y / 2f), transform.position.z);
         isGrounded = Physics.Raycast(origin, Vector3.down, 0.75f);
+    }
+
+    public void LockInput(bool locked)
+    {
+        inputLocked = locked;
+        if (locked)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
     }
 }
