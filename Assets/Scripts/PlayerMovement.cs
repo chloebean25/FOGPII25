@@ -26,9 +26,7 @@ public class PlayerMovement : MonoBehaviour
     public Slider sprintSlider;
     private float sprintRemaining;
     private bool isSprinting = false;
-    private bool isSprintCooldown = false;
-    private float sprintCooldownReset;
-    private bool canSprint = true; 
+    private bool canSprint = true;
 
     [Header("Jump")]
     public KeyCode jumpKey = KeyCode.Space;
@@ -43,7 +41,10 @@ public class PlayerMovement : MonoBehaviour
     private bool isCrouched = false;
 
     [HideInInspector]
-    public bool inputLocked = false; 
+    public bool inputLocked = false;
+
+    private Vector3 lastPosition; 
+    private Vector3 lastForward;  
 
     private void Awake()
     {
@@ -53,149 +54,105 @@ public class PlayerMovement : MonoBehaviour
         if (!unlimitedSprint)
         {
             sprintRemaining = sprintDuration;
-            sprintCooldownReset = sprintCooldown;
 
             if (sprintSlider != null)
             {
                 sprintSlider.minValue = 0f;
-                sprintSlider.maxValue = 1f; 
+                sprintSlider.maxValue = 1f;
                 sprintSlider.value = 1f;
             }
         }
 
-        
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+       
+        rb.constraints = RigidbodyConstraints.FreezeRotation;
     }
 
     private void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        lastPosition = transform.position;
+        lastForward = transform.forward;
     }
 
     private void Update()
     {
-        if (inputLocked) return; 
+       
+        if (inputLocked) return;
 
-        // Camera
+        
         yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
         pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
         pitch = Mathf.Clamp(pitch, -maxLookAngle, maxLookAngle);
 
-        transform.localEulerAngles = new Vector3(0, yaw, 0);
-        playerCamera.transform.localEulerAngles = new Vector3(pitch, 0, 0);
+        transform.rotation = Quaternion.Euler(0, yaw, 0);
+        playerCamera.transform.localRotation = Quaternion.Euler(pitch, 0, 0);
 
-        // Jump
+        //Jump 
         if (Input.GetKeyDown(jumpKey) && isGrounded)
-        {
             Jump();
-        }
 
-        // Crouch
+        //Crouch 
         if (Input.GetKeyDown(crouchKey))
-        {
             ToggleCrouch();
-        }
 
         CheckGround();
     }
 
     private void FixedUpdate()
     {
-        if (inputLocked) return; 
+        if (inputLocked) return;
 
+        //Movement
         Vector3 input = new Vector3(Input.GetAxis("Horizontal"), 0f, Input.GetAxis("Vertical"));
         Vector3 camForward = playerCamera.transform.forward;
         Vector3 camRight = playerCamera.transform.right;
-
         camForward.y = 0f;
         camRight.y = 0f;
         camForward.Normalize();
         camRight.Normalize();
 
-        Vector3 moveDir = camForward * input.z + camRight * input.x;
+        Vector3 moveDir = (camForward * input.z + camRight * input.x).normalized;
 
-        Vector3 targetVelocity;
+        float currentSpeed = isSprinting ? sprintSpeed : walkSpeed;
 
-        if (!unlimitedSprint)
+        if (Input.GetKey(sprintKey) && canSprint && sprintRemaining > 0f)
         {
-            
-            if (!canSprint)
-            {
-                sprintRemaining += Time.fixedDeltaTime; 
-                sprintRemaining = Mathf.Clamp(sprintRemaining, 0f, sprintDuration);
-
-                if (sprintRemaining >= sprintDuration)
-                    canSprint = true; 
-            }
-
-            if (Input.GetKey(sprintKey) && sprintRemaining > 0f && canSprint)
-            {
-                targetVelocity = transform.TransformDirection(input) * sprintSpeed;
-                isSprinting = true;
-
-                sprintRemaining -= Time.fixedDeltaTime;
-                sprintRemaining = Mathf.Clamp(sprintRemaining, 0f, sprintDuration);
-
-                if (sprintRemaining <= 0f)
-                {
-                    isSprinting = false;
-                    canSprint = false; 
-                }
-            }
-            else
-            {
-                targetVelocity = moveDir * (isSprinting ? sprintSpeed : walkSpeed);
-                isSprinting = false;
-
-                if (canSprint)
-                {
-                    sprintRemaining += Time.fixedDeltaTime;
-                    sprintRemaining = Mathf.Clamp(sprintRemaining, 0f, sprintDuration);
-                }
-            }
-
-            if (useSprintBar && sprintSlider != null)
-            {
-                sprintSlider.value = sprintRemaining / sprintDuration;
-            }
+            isSprinting = true;
+            sprintRemaining -= Time.fixedDeltaTime;
         }
         else
         {
-            if (Input.GetKey(sprintKey))
-            {
-                targetVelocity = transform.TransformDirection(input) * sprintSpeed;
-                isSprinting = true;
-            }
-            else
-            {
-                targetVelocity = transform.TransformDirection(input) * walkSpeed;
-                isSprinting = false;
-            }
-
-            if (useSprintBar && sprintSlider != null)
-            {
-                sprintSlider.value = 1f;
-            }
+            isSprinting = false;
+            sprintRemaining += Time.fixedDeltaTime;
         }
 
+        sprintRemaining = Mathf.Clamp(sprintRemaining, 0f, sprintDuration);
+        if (useSprintBar && sprintSlider != null)
+            sprintSlider.value = sprintRemaining / sprintDuration;
+
+        Vector3 targetVelocity = moveDir * currentSpeed;
         Vector3 velocity = rb.linearVelocity;
-        Vector3 velocityChange = (targetVelocity - velocity);
+        Vector3 velocityChange = targetVelocity - new Vector3(velocity.x, 0, velocity.z);
+
         velocityChange.x = Mathf.Clamp(velocityChange.x, -maxVelocityChange, maxVelocityChange);
         velocityChange.z = Mathf.Clamp(velocityChange.z, -maxVelocityChange, maxVelocityChange);
-        velocityChange.y = 0;
+
         rb.AddForce(velocityChange, ForceMode.VelocityChange);
+
+        
+        lastPosition = transform.position;
+        lastForward = transform.forward;
     }
 
     private void Jump()
     {
+        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
         rb.AddForce(Vector3.up * jumpPower, ForceMode.Impulse);
         isGrounded = false;
 
         if (isCrouched)
-        {
             ToggleCrouch();
-        }
     }
 
     private void ToggleCrouch()
@@ -204,14 +161,14 @@ public class PlayerMovement : MonoBehaviour
         {
             transform.localScale = originalScale;
             walkSpeed /= speedReduction;
-            isCrouched = false;
         }
         else
         {
             transform.localScale = new Vector3(originalScale.x, crouchHeight, originalScale.z);
             walkSpeed *= speedReduction;
-            isCrouched = true;
         }
+
+        isCrouched = !isCrouched;
     }
 
     private void CheckGround()
@@ -223,10 +180,20 @@ public class PlayerMovement : MonoBehaviour
     public void LockInput(bool locked)
     {
         inputLocked = locked;
+
         if (locked)
         {
+            
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        Vector3 v = rb.linearVelocity;
+        v.x = 0;
+        v.z = 0;
+        rb.linearVelocity = v;
     }
 }
