@@ -101,7 +101,11 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (inputLocked) return;
+        if (inputLocked){
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            return;
+        }
 
         //Movement
         Vector3 input = new Vector3(Input.GetAxis("Horizontal"), 0f, Input.GetAxis("Vertical"));
