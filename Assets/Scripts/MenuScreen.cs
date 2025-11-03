@@ -15,7 +15,7 @@ public class MenuScreen : MonoBehaviour
     }
     public void OnPlayButton()
     {
-        SceneManager.LoadScene("Farm");
+        SceneManager.LoadScene("IntroAnimation");
     }
 
     public void OnQuitButton()
