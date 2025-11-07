@@ -1,56 +1,32 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class BlackScreen : MonoBehaviour
+public class BlackScreenTrigger : MonoBehaviour
 {
-    [Header("UI")]
-    public GameObject blackScreen;
-
-    [Header("Scene Settings")]
+    [Header("References")]
+    public GameObject blackScreen;      
     public string nextSceneName = "Farm";
+    public float delayBeforeLoad = 1f;
 
-    [Header("Truck Reference")]
-    public Animator truckAnimator;
-    public string truckMoveStateName = "TruckMove"; 
+    private bool hasTriggered = false;
 
-    
-    public void CutToBlack()
+    private void OnTriggerStay(Collider other)
     {
-        blackScreen.SetActive(true);
-        StartCoroutine(WaitForTruckAnimation());
+        if (hasTriggered) return;
+
+        
+        if (other.name == "Truck" || other.CompareTag("Truck"))
+        {
+            Debug.Log("Truck triggered scene load!");
+            hasTriggered = true;
+            blackScreen.SetActive(true);
+            StartCoroutine(LoadSceneAfterDelay());
+        }
     }
 
-    private System.Collections.IEnumerator WaitForTruckAnimation()
+    private System.Collections.IEnumerator LoadSceneAfterDelay()
     {
-        if (truckAnimator == null)
-        {
-            Debug.LogWarning("Truck Animator not assigned! Loading scene immediately.");
-            SceneManager.LoadScene(nextSceneName);
-            yield break;
-        }
-
-        
-        AnimationClip clip = null;
-        foreach (var c in truckAnimator.runtimeAnimatorController.animationClips)
-        {
-            if (c.name == truckMoveStateName)
-            {
-                clip = c;
-                break;
-            }
-        }
-
-        if (clip == null)
-        {
-            Debug.LogWarning($"Truck animation clip '{truckMoveStateName}' not found! Loading scene immediately.");
-            SceneManager.LoadScene(nextSceneName);
-            yield break;
-        }
-
-        
-        yield return new WaitForSeconds(clip.length);
-
-        blackScreen.SetActive(false);
+        yield return new WaitForSeconds(delayBeforeLoad);
         SceneManager.LoadScene(nextSceneName);
     }
 }
