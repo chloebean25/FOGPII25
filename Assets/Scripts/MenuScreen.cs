@@ -7,6 +7,7 @@ using TMPro;
 public class MenuScreen : MonoBehaviour
 {
     public GameObject controlsText;
+    public SceneController sceneController;
 
     public void Start(){
         Cursor.lockState = CursorLockMode.None;
@@ -15,7 +16,7 @@ public class MenuScreen : MonoBehaviour
     }
     public void OnPlayButton()
     {
-        SceneManager.LoadScene("IntroAnimation");
+        sceneController.LoadScene("IntroAnimation");
     }
 
     public void OnQuitButton()

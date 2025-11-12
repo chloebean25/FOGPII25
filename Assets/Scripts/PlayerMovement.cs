@@ -111,6 +111,19 @@ public class PlayerMovement : MonoBehaviour
 
         HandleSprint();
 
+        if (moveDir.magnitude > 0.1f)
+        {
+            Vector2 lv = new Vector2(rb.linearVelocity.x, rb.linearVelocity.z).normalized;
+            Vector2 inputDirection = new Vector2(moveDir.x, moveDir.z).normalized;
+
+            if (lv != inputDirection)
+            {
+                float mag = lv.magnitude;
+                Vector2 newVelocity = inputDirection * mag;
+                rb.linearVelocity = new Vector3(newVelocity.x, rb.linearVelocity.y, newVelocity.y);
+            }
+        }
+
         float currentSpeed = isSprinting ? sprintSpeed : walkSpeed;
 
         Vector3 targetVelocity = moveDir * currentSpeed;

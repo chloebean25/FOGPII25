@@ -20,5 +20,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Farm2.unity
     guid: 1c8c5818d345de14fb8369706245fd6a
+  - enabled: 1
+    path: Assets/Scenes/EndCredits.unity
+    guid: 70d62bdd3dec84c408ad007a97da42ca
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

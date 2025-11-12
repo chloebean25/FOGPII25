@@ -4,14 +4,9 @@ using UnityEngine.EventSystems;
 
 public class Notebook : MonoBehaviour
 {
-    [Header("UI References")]
     public GameObject notebookUI;
     public TMP_InputField notes;
-
-    [Header("Player Reference")]
     public PlayerMovement playerMovement;
-
-    [Header("Controls")]
     public KeyCode toggleKey = KeyCode.N;
     public KeyCode closeKey = KeyCode.Escape;
 
@@ -19,34 +14,30 @@ public class Notebook : MonoBehaviour
 
     private void Start()
     {
-        // Hide notebook at start
+        PlayerPrefs.DeleteKey("PlayerNotes");
         notebookUI.SetActive(false);
 
-        // Load saved notes if any
         if (PlayerPrefs.HasKey("PlayerNotes"))
             notes.text = PlayerPrefs.GetString("PlayerNotes");
 
-        // Hide and lock cursor at start
+        notes.lineType = TMP_InputField.LineType.MultiLineNewline;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
     private void Update()
     {
-        // Open notebook with toggleKey if not already open and not typing in another field
         if (Input.GetKeyDown(toggleKey) && !isOpen && !IsAnyInputFieldFocused())
         {
             ToggleNotebook();
         }
 
-        // Close notebook with closeKey if open
         if (isOpen && Input.GetKeyDown(closeKey))
         {
             ToggleNotebook();
         }
     }
 
-    // Returns true if any TMP_InputField is currently focused
     private bool IsAnyInputFieldFocused()
     {
         if (EventSystem.current == null || EventSystem.current.currentSelectedGameObject == null)
@@ -63,29 +54,25 @@ public class Notebook : MonoBehaviour
 
         if (isOpen)
         {
-            // Lock player movement
             if (playerMovement != null)
                 playerMovement.LockInput(true);
 
-            // Show and unlock cursor
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            // Auto-focus the notebook input field
-            notes.Select();
             notes.ActivateInputField();
+            notes.caretPosition = notes.text.Length;
+            notes.selectionAnchorPosition = notes.caretPosition;
+            notes.selectionFocusPosition = notes.caretPosition;
         }
         else
         {
-            // Unlock player movement
             if (playerMovement != null)
                 playerMovement.LockInput(false);
 
-            // Hide and lock cursor
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
-            // Save notes
             SaveNotes();
         }
     }
