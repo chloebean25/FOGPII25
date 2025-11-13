@@ -73,11 +73,11 @@ public class PlayerMovement : MonoBehaviour
         if (inputLocked) return;
 
         // --- Mouse Look ---
-        yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
-        pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
-        pitch = Mathf.Clamp(pitch, -maxLookAngle, maxLookAngle);
-        transform.rotation = Quaternion.Euler(0, yaw, 0);
-        playerCamera.transform.localRotation = Quaternion.Euler(pitch, 120f, 0);
+        //yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
+        //pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
+        //pitch = Mathf.Clamp(pitch, -maxLookAngle, maxLookAngle);
+        //transform.rotation = Quaternion.Euler(0, yaw, 0);
+        //playerCamera.transform.localRotation = Quaternion.Euler(pitch, 120f, 0);
 
         // --- Jump ---
         if (Input.GetKeyDown(jumpKey) && isGrounded)
@@ -97,6 +97,12 @@ public class PlayerMovement : MonoBehaviour
             rb.linearVelocity = Vector3.zero;
             return;
         }
+
+        yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
+        pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
+        pitch = Mathf.Clamp(pitch, -maxLookAngle, maxLookAngle);
+        transform.rotation = Quaternion.Euler(0, yaw, 0);
+        playerCamera.transform.localRotation = Quaternion.Euler(pitch, 120f, 0);
 
         // --- Movement ---
         Vector3 input = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));

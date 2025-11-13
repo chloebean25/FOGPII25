@@ -22,10 +22,12 @@ public class QuickTimeEventManager : MonoBehaviour
     [Header("UI References")]
     public GameObject qteUIPanel;     
     public TMP_Text qteText;          
-    public GameObject failScreen;     
+    public GameObject failScreen;    
+    public PlayerMovement playerMovement;  
 
     [Header("References")]
     public Animator chaseCameraAnimator;
+    public Animator cowAnimator;
 
     private bool isFailed = false;
 
@@ -155,7 +157,7 @@ public class QuickTimeEventManager : MonoBehaviour
         cg.alpha = end;
     }
     private void EndQTESequence()
-{
+    {
     Debug.Log("QTE Sequence Finished!");
 
     
@@ -166,33 +168,64 @@ public class QuickTimeEventManager : MonoBehaviour
     Time.timeScale = 1f;
 
     
-    if (chaseCameraAnimator != null)
+    if (chaseCameraAnimator != null && cowAnimator != null)
         chaseCameraAnimator.enabled = true;
+        cowAnimator.enabled = true;
 
-    SceneManager.LoadScene("MenuScreen");
-}
+   
+    }
 
 
-    private void ShowFailScreen()
+   private void ShowFailScreen()
     {
-        failScreen.SetActive(true);
-
         
-        if (chaseCameraAnimator != null)
+        Time.timeScale = 0f; 
+
+        failScreen.SetActive(true);
+        if (playerMovement != null)
+            playerMovement.LockInput(true);
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        if (chaseCameraAnimator != null && cowAnimator != null)
+        {
+            cowAnimator.enabled = false;
             chaseCameraAnimator.enabled = false;
+            chaseCameraAnimator.speed = 0f;
+            cowAnimator.speed = 0f;
+        }
 
         Debug.Log("Fail Screen Activated — Animation Paused");
     }
 
 
-    public void Retry()
+
+
+  public void Retry()
     {
         failScreen.SetActive(false);
+        if (playerMovement != null)
+            playerMovement.LockInput(false);
 
-        if (chaseCameraAnimator != null)
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        Time.timeScale = 1f;
+
+        if (chaseCameraAnimator != null&& cowAnimator != null)
+        {
             chaseCameraAnimator.enabled = true;
+            cowAnimator.enabled = true;
+            cowAnimator.speed = 1f;
+            chaseCameraAnimator.speed = 1f; 
+            chaseCameraAnimator.Play("ChaseCamera", 0, 0f); 
+            cowAnimator.Play("CowChase", 0, 0f);
+        }
 
         isFailed = false;
+        StopAllCoroutines();
         StartCoroutine(QTEChaseSequence());
     }
 }
+

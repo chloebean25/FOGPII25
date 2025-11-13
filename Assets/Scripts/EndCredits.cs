@@ -23,6 +23,7 @@ public class EndCredits : MonoBehaviour
     public float scrollSpeed = 50f;
     public float extraMessageDelay = 1f;
     public float extraMessageHoldTime = 2f;
+    public float postScrollDelay = 0f;
 
     private Vector2 creditsStartPos;
 
@@ -87,11 +88,17 @@ public class EndCredits : MonoBehaviour
 
         float screenHeight = ((RectTransform)creditsText.parent).rect.height;
         float endY = creditsStartPos.y + creditsText.rect.height + screenHeight;
+
         while (creditsText.anchoredPosition.y < endY)
         {
             creditsText.anchoredPosition += Vector2.up * scrollSpeed * Time.deltaTime;
             yield return null;
         }
+
+        creditsText.anchoredPosition = new Vector2(creditsText.anchoredPosition.x, endY);
+
+        if (postScrollDelay > 0f)
+            yield return new WaitForSeconds(postScrollDelay);
 
         foreach (ExtraMessage em in extraMessages)
         {
