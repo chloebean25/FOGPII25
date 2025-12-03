@@ -6,10 +6,10 @@ using UnityEngine;
 public class DialogueManager : MonoBehaviour
 {
     public TMP_Text textComponent;
-    public float typingSpeed = 0.05f;
+    public float typingSpeed = 50.0f;
     public KeyCode skipKey = KeyCode.Space;
     public float autoAdvanceDelay = 1.0f;
-    public float displayDurationAfterLine = 3f;
+    public float displayDurationAfterLine = 2f;
 
     private Queue<string> dialogueQueue = new Queue<string>();
     private bool isTyping = false;
