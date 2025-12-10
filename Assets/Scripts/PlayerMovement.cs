@@ -41,6 +41,11 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 originalScale;
     private bool isCrouched = false;
 
+    [Header("Audio")]
+    public AudioSource walkAudio;
+    public AudioSource runAudio;
+    public AudioSource ambienceAudio;
+
     [HideInInspector]
     public bool inputLocked = false;
 
@@ -66,6 +71,13 @@ public class PlayerMovement : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        yaw = transform.eulerAngles.y;
+        pitch = playerCamera.transform.localEulerAngles.x;
+        if(ambienceAudio != null && !ambienceAudio.isPlaying)
+        {
+            ambienceAudio.loop = true;
+            ambienceAudio.Play();
+        }
     }
 
     private void Update()
@@ -117,7 +129,7 @@ public class PlayerMovement : MonoBehaviour
 
         HandleSprint();
 
-        if (moveDir.magnitude > 0.1f)
+        /*if (moveDir.magnitude > 0.1f)
         {
             Vector2 lv = new Vector2(rb.linearVelocity.x, rb.linearVelocity.z).normalized;
             Vector2 inputDirection = new Vector2(moveDir.x, moveDir.z).normalized;
@@ -128,7 +140,7 @@ public class PlayerMovement : MonoBehaviour
                 Vector2 newVelocity = inputDirection * mag;
                 rb.linearVelocity = new Vector3(newVelocity.x, rb.linearVelocity.y, newVelocity.y);
             }
-        }
+        }*/
 
         float currentSpeed = isSprinting ? sprintSpeed : walkSpeed;
 
@@ -150,6 +162,7 @@ public class PlayerMovement : MonoBehaviour
             current.z = Mathf.Lerp(current.z, 0, Time.fixedDeltaTime * stopSmoothness);
             rb.linearVelocity = current;
         }
+        HandleFootsteps(moveDir);
     }
 
     // --- Sprint Logic ---
@@ -221,6 +234,44 @@ public class PlayerMovement : MonoBehaviour
     {
         Vector3 origin = new Vector3(transform.position.x, transform.position.y - (transform.localScale.y / 2f), transform.position.z);
         isGrounded = Physics.Raycast(origin, Vector3.down, 0.75f);
+    }
+    private void HandleFootsteps(Vector3 moveDir){
+        bool isMoving = moveDir.magnitude > 0.5f;
+
+        if(isGrounded && isMoving)
+        {
+            if(isSprinting)
+            {
+                if(!runAudio.isPlaying)
+                {
+                    runAudio.Play();
+                }
+                if (walkAudio.isPlaying){
+                    walkAudio.Stop();
+                }
+            }
+            else
+            {
+                if(!walkAudio.isPlaying)
+                {
+                    walkAudio.Play();
+                }
+                if (runAudio.isPlaying){
+                    runAudio.Stop();
+                }
+            }
+        }
+        else
+        {
+            if (walkAudio.isPlaying)
+            {
+                walkAudio.Stop();
+            }
+            if (runAudio.isPlaying)
+            {
+                runAudio.Stop();
+            }
+        }
     }
 
     public void LockInput(bool locked)

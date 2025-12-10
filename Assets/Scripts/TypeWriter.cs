@@ -33,12 +33,13 @@ public class DialogueTyper : MonoBehaviour
         {
             yield return StartCoroutine(TypeLine(dialogueLines[currentLine]));
 
-            
             yield return new WaitForSeconds(autoAdvanceDelay);
 
             currentLine++;
         }
 
+        // Clear text when dialogue finishes
+        textComponent.text = "";
         Debug.Log("Dialogue finished!");
     }
 
@@ -50,7 +51,6 @@ public class DialogueTyper : MonoBehaviour
         {
             textComponent.text += c;
 
-            
             if (Input.GetKeyDown(skipKey))
             {
                 textComponent.text = line;

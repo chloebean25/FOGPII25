@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
+using System.Text.RegularExpressions;
 
 public class CellarKeypad : MonoBehaviour
 {
@@ -20,10 +21,7 @@ public class CellarKeypad : MonoBehaviour
         Instance = this;
         keypadUI.SetActive(false);
 
-        
         inputField.lineType = TMP_InputField.LineType.SingleLine;
-
-        
         inputField.onSubmit.AddListener(OnSubmit);
     }
 
@@ -42,9 +40,19 @@ public class CellarKeypad : MonoBehaviour
         SubmitCode();
     }
 
+    
+    private string Clean(string s)
+    {
+        s = s.ToLower();               
+        s = s.Replace("'", "");       
+        s = Regex.Replace(s, @"\s+", " ").Trim(); 
+        return s;
+    }
+    
+
     public void SubmitCode()
     {
-        if (inputField.text.Equals(correctCode, System.StringComparison.OrdinalIgnoreCase))
+        if (Clean(inputField.text) == Clean(correctCode))
         {
             SceneManager.LoadScene(nextSceneName);
             CloseKeypad();
@@ -63,14 +71,12 @@ public class CellarKeypad : MonoBehaviour
         isOpen = true;
         keypadUI.SetActive(true);
 
-        
         if (playerMovement != null)
             playerMovement.LockInput(true);
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        
         inputField.text = "";
         inputField.ActivateInputField();
     }

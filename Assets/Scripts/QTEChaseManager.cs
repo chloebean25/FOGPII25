@@ -1,89 +1,49 @@
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
 using System.Collections;
-using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 
 public class QuickTimeEventManager : MonoBehaviour
 {
-    [Header("QTE Settings")]
-    
     public float qteDuration = 2f;
-    public float introDelay = 2f;
-    public float qteTotalDuration = 10f; 
-
-    
-    public float slowMotionScale = 0.3f;
     public float edgePadding = 100f;
 
-    
-    public float timeBetweenEvents = 2f;
+    public GameObject qteUIPanel;
+    public TMP_Text qteText;
+    public GameObject failScreen;
 
-    [Header("UI References")]
-    public GameObject qteUIPanel;     
-    public TMP_Text qteText;          
-    public GameObject failScreen;    
-    public PlayerMovement playerMovement;  
-
-    [Header("References")]
-    public Animator chaseCameraAnimator;
-    public Animator cowAnimator;
+    public Animator[] slowAnimators;
+    public float slowMotionScale = 0.3f;
 
     private bool isFailed = false;
 
-    private void Start()
+    public void TriggerQTE(char expectedLetter)
     {
-        
-        if (qteUIPanel != null)
-            qteUIPanel.SetActive(false);
-        if (failScreen != null)
-            failScreen.SetActive(false);
-
-        
-        StartCoroutine(QTEChaseSequence());
+        if (!isFailed)
+            StartCoroutine(RunQTE(char.ToUpper(expectedLetter)));
     }
 
-    private IEnumerator QTEChaseSequence()
-{
-    // Wait for intro animation
-    yield return new WaitForSeconds(introDelay);
-
-    float elapsedTime = 0f;
-
-    while (!isFailed && elapsedTime < qteTotalDuration)
+    public void TriggerQTEFromAnimation(string letter)
     {
-        yield return StartCoroutine(TriggerQTE());
-
-        if (isFailed)
-            break;
-
-        
-        yield return new WaitForSeconds(timeBetweenEvents);
-
-        
-        elapsedTime += qteDuration + timeBetweenEvents;
+        if (!string.IsNullOrEmpty(letter))
+            TriggerQTE(char.ToUpper(letter[0]));
     }
 
-   
-    EndQTESequence();
-}
-
-
-    private IEnumerator TriggerQTE()
+    private IEnumerator RunQTE(char expectedLetter)
     {
-        
         Time.timeScale = slowMotionScale;
 
-    
-        int randomIndex = Random.Range(0, 26);
-        char randomLetter = (char)('A' + randomIndex);
-        qteText.text = randomLetter.ToString();
-        // Move text to a random screen position
-        RectTransform rect = qteText.GetComponent<RectTransform>();
-        if (rect != null)
+        if (qteUIPanel != null)
+            qteUIPanel.SetActive(true);
+
+        EventSystem.current.SetSelectedGameObject(null);
+
+        if (qteText != null)
         {
-            
-            Canvas canvas = qteText.canvas;
+            qteText.text = expectedLetter.ToString();
+
+            RectTransform rect = qteText.transform.parent.GetComponent<RectTransform>();
+            Canvas canvas = qteUIPanel.GetComponentInParent<Canvas>();
             RectTransform canvasRect = canvas.GetComponent<RectTransform>();
 
             float halfWidth = canvasRect.rect.width / 2f - edgePadding;
@@ -95,137 +55,70 @@ public class QuickTimeEventManager : MonoBehaviour
             rect.anchoredPosition = new Vector2(randomX, randomY);
         }
 
-
-    
-        KeyCode expectedKey = (KeyCode)((int)KeyCode.A + randomIndex);
-
-        
-        qteUIPanel.SetActive(true);
-
-    
-        CanvasGroup cg = qteUIPanel.GetComponent<CanvasGroup>();
-        if (cg != null)
-            yield return StartCoroutine(FadeCanvasGroup(cg, 0, 1, 0.2f));
-
-        Debug.Log($"QTE Prompt: {randomLetter}");
-
         float timer = 0f;
         bool success = false;
 
+        KeyCode expectedKey = (KeyCode)System.Enum.Parse(typeof(KeyCode), expectedLetter.ToString());
+
         while (timer < qteDuration)
         {
-        
             if (Input.GetKeyDown(expectedKey))
             {
-                Debug.Log("QTE Success!");
                 success = true;
                 break;
             }
 
-            timer += Time.unscaledDeltaTime; 
+            timer += Time.unscaledDeltaTime;
             yield return null;
         }
 
-        if (success)
-        {
-            
-            if (cg != null)
-                yield return StartCoroutine(FadeCanvasGroup(cg, 1, 0, 0.2f));
+        Time.timeScale = 1f;
 
+        if (qteUIPanel != null)
             qteUIPanel.SetActive(false);
-            Time.timeScale = 1f;
-        }
-        else
+
+        if (!success)
         {
-            Debug.Log("QTE Failed!");
             isFailed = true;
-            Time.timeScale = 1f;
             ShowFailScreen();
         }
     }
 
-    private IEnumerator FadeCanvasGroup(CanvasGroup cg, float start, float end, float duration)
+    private void ShowFailScreen()
     {
-        float time = 0f;
-        cg.alpha = start;
-        while (time < duration)
-        {
-            cg.alpha = Mathf.Lerp(start, end, time / duration);
-            time += Time.unscaledDeltaTime; 
-            yield return null;
-        }
-        cg.alpha = end;
-    }
-    private void EndQTESequence()
-    {
-    Debug.Log("QTE Sequence Finished!");
-
-    
-    if (qteUIPanel != null)
-        qteUIPanel.SetActive(false);
-
-    
-    Time.timeScale = 1f;
-
-    
-    if (chaseCameraAnimator != null && cowAnimator != null)
-        chaseCameraAnimator.enabled = true;
-        cowAnimator.enabled = true;
-
-   
-    }
-
-
-   private void ShowFailScreen()
-    {
-        
-        Time.timeScale = 0f; 
-
-        failScreen.SetActive(true);
-        if (playerMovement != null)
-            playerMovement.LockInput(true);
+        if (failScreen != null)
+            failScreen.SetActive(true);
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        if (chaseCameraAnimator != null && cowAnimator != null)
-        {
-            cowAnimator.enabled = false;
-            chaseCameraAnimator.enabled = false;
-            chaseCameraAnimator.speed = 0f;
-            cowAnimator.speed = 0f;
-        }
-
-        Debug.Log("Fail Screen Activated — Animation Paused");
+        Time.timeScale = 0f;
     }
 
-
-
-
-  public void Retry()
+    public void Retry()
     {
-        failScreen.SetActive(false);
-        if (playerMovement != null)
-            playerMovement.LockInput(false);
+        if (failScreen != null)
+            failScreen.SetActive(false);
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        Time.timeScale = 1f;
-
-        if (chaseCameraAnimator != null&& cowAnimator != null)
+        foreach (var anim in slowAnimators)
         {
-            chaseCameraAnimator.enabled = true;
-            cowAnimator.enabled = true;
-            cowAnimator.speed = 1f;
-            chaseCameraAnimator.speed = 1f; 
-            chaseCameraAnimator.Play("ChaseCamera", 0, 0f); 
-            cowAnimator.Play("CowChase", 0, 0f);
+            anim.speed = 1f;  
+            anim.Rebind();    
+            anim.Update(0f);   
+            anim.Play(anim.GetCurrentAnimatorStateInfo(0).shortNameHash, 0, 0f);
         }
 
-        isFailed = false;
-        StopAllCoroutines();
-        StartCoroutine(QTEChaseSequence());
-    }
-}
+        Time.timeScale = 1f;
 
+        isFailed = false;
+    }
+
+     public void Quit()
+    {
+        Application.Quit();
+    }
+
+}

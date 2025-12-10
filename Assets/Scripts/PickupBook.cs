@@ -4,11 +4,13 @@ public class PickupBook : MonoBehaviour
 {
     public GameObject pickupText;
     public GameObject image;
+    public GameObject text;
      
     void Start()
     {
         pickupText.SetActive(false);
         image.SetActive(false);
+        text.SetActive(false);
         
     }
 
@@ -20,13 +22,15 @@ public class PickupBook : MonoBehaviour
 
                 pickupText.SetActive(false);  
                 image.SetActive(true);
+                text.SetActive(true);
             }
         }
     }
     void OnTriggerExit(Collider player){
         
         pickupText.SetActive(false); 
-        image.SetActive(false);  
+        image.SetActive(false); 
+        text.SetActive(false); 
 
     }
 }
