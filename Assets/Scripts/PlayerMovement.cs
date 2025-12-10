@@ -110,8 +110,8 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
-        pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
+        yaw += Input.GetAxis("Mouse X") * mouseSensitivity * Time.fixedDeltaTime;
+        pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity * Time.fixedDeltaTime;
         pitch = Mathf.Clamp(pitch, -maxLookAngle, maxLookAngle);
         transform.rotation = Quaternion.Euler(0, yaw, 0);
         playerCamera.transform.localRotation = Quaternion.Euler(pitch, 120f, 0);

@@ -23,7 +23,7 @@ public class KeyPadManager : MonoBehaviour
 
     private void Update()
     {
-        if (isOpen && Input.GetKeyDown(KeyCode.Backspace))
+        if (isOpen && Input.GetKeyDown(KeyCode.Escape))
         {
             CloseKeypad();
         }
