@@ -5,6 +5,7 @@ using UnityEngine.EventSystems;
 public class Notebook : MonoBehaviour
 {
     public GameObject notebookUI;
+    public Flashlight flashlight;
     public TMP_InputField notes;
     public PlayerMovement playerMovement;
     public KeyCode toggleKey = KeyCode.N;
@@ -59,6 +60,7 @@ public class Notebook : MonoBehaviour
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+            flashlight.enabled = false;
 
             notes.ActivateInputField();
             notes.caretPosition = notes.text.Length;
@@ -72,7 +74,11 @@ public class Notebook : MonoBehaviour
 
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+            flashlight.enabled = false;
 
+            //force save notes
+            notes.DeactivateInputField();
+            notes.ReleaseSelection();
             SaveNotes();
         }
     }

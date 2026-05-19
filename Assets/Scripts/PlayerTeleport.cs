@@ -1,26 +1,63 @@
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
 
 public class PlayerTeleport : MonoBehaviour
 {
-    public GameObject player;
+    public Transform player;
     public Transform teleportSpot;
     public GameObject displayText;
-     void Start(){
-        displayText.SetActive(false);
-    }
-    
-    void OnTriggerStay(Collider player){
-        if(player.gameObject.tag=="Player"){
-            displayText.SetActive(true);
-            if(Input.GetKeyDown(KeyCode.F)){
-                player.transform.position = teleportSpot.position;
 
-            }
+    private CharacterController cc;
+    private bool playerInRange = false;
+    private bool canUse = true;
+
+    void Start()
+    {
+        displayText.SetActive(false);
+        cc = player.GetComponent<CharacterController>();
+    }
+
+    void Update()
+    {
+        if (playerInRange && canUse && Input.GetKeyDown(KeyCode.F))
+        {
+            Teleport();
         }
     }
-    void OnTriggerExit(Collider player){
+
+    void Teleport()
+    {
+        canUse = false;
+
         displayText.SetActive(false);
+
+        if (cc != null)
+            cc.enabled = false;
+
+        player.position = teleportSpot.position;
+
+        if (cc != null)
+            cc.enabled = true;
+
+        playerInRange = false;
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInRange = true;
+            displayText.SetActive(true);
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInRange = false;
+            displayText.SetActive(false);
+
+            canUse = true;
+        }
     }
 }

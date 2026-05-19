@@ -5,15 +5,26 @@ public class KeyPadManager : MonoBehaviour
 {
     public static KeyPadManager Instance;
 
+    [Header("UI")]
     public GameObject keypadUI;
-    public TMP_Text inputText; 
-    public PlayerMovement playerMovement; 
+    public TMP_Text inputText;
+
+    [Header("Player")]
+    public PlayerMovement playerMovement;
+    public GameObject player;
+
+    [Header("Puzzle")]
     public string correctCode = "8457";
     public Transform teleportSpot;
-    public GameObject player;
+
+    [Header("Optional Trigger (IMPORTANT)")]
+    public Collider keypadTrigger; // assign your trigger collider here
 
     private string currentInput = "";
     public bool isOpen = false;
+
+    private bool puzzleSolved = false;
+    private bool justTeleported = false;
 
     private void Awake()
     {
@@ -31,6 +42,8 @@ public class KeyPadManager : MonoBehaviour
 
     public void AddDigit(string digit)
     {
+        if (puzzleSolved) return;
+
         if (currentInput.Length < 10)
         {
             currentInput += digit;
@@ -46,10 +59,18 @@ public class KeyPadManager : MonoBehaviour
 
     public void SubmitCode()
     {
+        if (puzzleSolved) return;
+
         if (currentInput == correctCode)
         {
-            player.transform.position = teleportSpot.position;
+            puzzleSolved = true;
+
+            TeleportPlayer();
             CloseKeypad();
+
+            // ?? Prevent keypad from ever reopening
+            if (keypadTrigger != null)
+                keypadTrigger.enabled = false;
         }
         else
         {
@@ -57,21 +78,45 @@ public class KeyPadManager : MonoBehaviour
         }
     }
 
+    private void TeleportPlayer()
+    {
+        CharacterController cc = player.GetComponent<CharacterController>();
+
+        if (cc != null)
+            cc.enabled = false;
+
+        player.transform.position = teleportSpot.position;
+
+        if (cc != null)
+            cc.enabled = true;
+
+        // stop weird movement carry-over
+        if (playerMovement != null)
+            playerMovement.LockInput(false);
+
+        justTeleported = true;
+
+        // optional: small delay before allowing interactions again
+        Invoke(nameof(ClearTeleportFlag), 0.5f);
+    }
+
+    private void ClearTeleportFlag()
+    {
+        justTeleported = false;
+    }
+
     public void OpenKeypad()
     {
-        if (isOpen) return;
+        if (isOpen || puzzleSolved || justTeleported) return;
 
         isOpen = true;
         keypadUI.SetActive(true);
 
-        
         if (playerMovement != null)
             playerMovement.LockInput(true);
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-
-        Debug.Log(">>> Keypad OPEN triggered");
     }
 
     public void CloseKeypad()
@@ -81,7 +126,6 @@ public class KeyPadManager : MonoBehaviour
         isOpen = false;
         keypadUI.SetActive(false);
 
-        
         if (playerMovement != null)
             playerMovement.LockInput(false);
 

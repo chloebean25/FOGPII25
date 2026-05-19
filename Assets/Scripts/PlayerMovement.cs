@@ -1,22 +1,25 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
 {
-    private Rigidbody rb;
+    private CharacterController controller;
 
     [Header("Camera")]
     public Camera playerCamera;
-    public float mouseSensitivity = 2f;
-    public float maxLookAngle = 50f;
-    private float yaw = 0f;
-    private float pitch = 0f;
+    public float mouseSensitivity = 300f;
+    public float maxLookAngle = 80f;
+
+    private float xRotation = 0f;
 
     [Header("Movement")]
     public float walkSpeed = 5f;
-    public float sprintSpeed = 7f;
-    public float maxVelocityChange = 10f;
-    public float stopSmoothness = 8f;
+    public float sprintSpeed = 8f;
+    public float crouchSpeed = 2.5f;
+    public float gravity = -20f;
+
+    private Vector3 velocity;
 
     [Header("Sprint")]
     public bool unlimitedSprint = false;
@@ -25,20 +28,20 @@ public class PlayerMovement : MonoBehaviour
     public float sprintCooldown = 0.5f;
     public bool useSprintBar = true;
     public Slider sprintSlider;
+
     private float sprintRemaining;
-    private bool isSprinting = false;
     private bool canSprint = true;
+    private bool isSprinting = false;
 
     [Header("Jump")]
     public KeyCode jumpKey = KeyCode.Space;
-    public float jumpPower = 5f;
-    private bool isGrounded = false;
+    public float jumpHeight = 1.5f;
 
     [Header("Crouch")]
     public KeyCode crouchKey = KeyCode.LeftControl;
-    public float crouchHeight = 0.75f;
-    public float speedReduction = 0.5f;
-    private Vector3 originalScale;
+    public float standingHeight = 2f;
+    public float crouchingHeight = 1f;
+
     private bool isCrouched = false;
 
     [Header("Audio")]
@@ -51,13 +54,12 @@ public class PlayerMovement : MonoBehaviour
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody>();
-        rb.constraints = RigidbodyConstraints.FreezeRotation;
-        originalScale = transform.localScale;
+        controller = GetComponent<CharacterController>();
 
         if (!unlimitedSprint)
         {
             sprintRemaining = sprintDuration;
+
             if (sprintSlider != null)
             {
                 sprintSlider.minValue = 0f;
@@ -71,9 +73,8 @@ public class PlayerMovement : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        yaw = transform.eulerAngles.y;
-        pitch = playerCamera.transform.localEulerAngles.x;
-        if(ambienceAudio != null && !ambienceAudio.isPlaying)
+
+        if (ambienceAudio != null && !ambienceAudio.isPlaying)
         {
             ambienceAudio.loop = true;
             ambienceAudio.Play();
@@ -82,104 +83,111 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        if (inputLocked) return;
+        if (inputLocked)
+            return;
 
-        // --- Mouse Look ---
-        //yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
-        //pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
-        //pitch = Mathf.Clamp(pitch, -maxLookAngle, maxLookAngle);
-        //transform.rotation = Quaternion.Euler(0, yaw, 0);
-        //playerCamera.transform.localRotation = Quaternion.Euler(pitch, 120f, 0);
-
-        // --- Jump ---
-        if (Input.GetKeyDown(jumpKey) && isGrounded)
-            Jump();
-
-        // --- Crouch ---
-        if (Input.GetKeyDown(crouchKey))
-            ToggleCrouch();
-
-        CheckGround();
+        HandleMouseLook();
+        HandleMovement();
+        HandleJump();
+        HandleCrouch();
+        HandleSprint();
+        HandleFootsteps();
     }
 
-    private void FixedUpdate()
+    private void HandleMouseLook()
     {
-        if (inputLocked)
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+
+        xRotation -= mouseY;
+        xRotation = Mathf.Clamp(xRotation, -maxLookAngle, maxLookAngle);
+
+        playerCamera.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+
+        transform.Rotate(Vector3.up * mouseX);
+    }
+
+    private void HandleMovement()
+    {
+        float x = Input.GetAxisRaw("Horizontal");
+        float z = Input.GetAxisRaw("Vertical");
+
+        Vector3 move = transform.right * x + transform.forward * z;
+
+        float currentSpeed = walkSpeed;
+
+        if (isCrouched)
         {
-            rb.linearVelocity = Vector3.zero;
-            return;
+            currentSpeed = crouchSpeed;
+        }
+        else if (isSprinting)
+        {
+            currentSpeed = sprintSpeed;
         }
 
-        yaw += Input.GetAxis("Mouse X") * mouseSensitivity * Time.fixedDeltaTime;
-        pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity * Time.fixedDeltaTime;
-        pitch = Mathf.Clamp(pitch, -maxLookAngle, maxLookAngle);
-        transform.rotation = Quaternion.Euler(0, yaw, 0);
-        playerCamera.transform.localRotation = Quaternion.Euler(pitch, 120f, 0);
+        controller.Move(move.normalized * currentSpeed * Time.deltaTime);
 
-        // --- Movement ---
-        Vector3 input = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
-        Vector3 camForward = playerCamera.transform.forward;
-        Vector3 camRight = playerCamera.transform.right;
-        camForward.y = 0f;
-        camRight.y = 0f;
-        camForward.Normalize();
-        camRight.Normalize();
-
-        Vector3 moveDir = (camForward * input.z + camRight * input.x).normalized;
-
-        HandleSprint();
-
-        /*if (moveDir.magnitude > 0.1f)
+        // Gravity
+        if (controller.isGrounded && velocity.y < 0)
         {
-            Vector2 lv = new Vector2(rb.linearVelocity.x, rb.linearVelocity.z).normalized;
-            Vector2 inputDirection = new Vector2(moveDir.x, moveDir.z).normalized;
+            velocity.y = -2f;
+        }
 
-            if (lv != inputDirection)
+        velocity.y += gravity * Time.deltaTime;
+
+        controller.Move(velocity * Time.deltaTime);
+    }
+
+    private void HandleJump()
+    {
+        if (Input.GetKeyDown(jumpKey) && controller.isGrounded)
+        {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+
+            if (isCrouched)
             {
-                float mag = lv.magnitude;
-                Vector2 newVelocity = inputDirection * mag;
-                rb.linearVelocity = new Vector3(newVelocity.x, rb.linearVelocity.y, newVelocity.y);
+                ToggleCrouch();
             }
-        }*/
+        }
+    }
 
-        float currentSpeed = isSprinting ? sprintSpeed : walkSpeed;
-
-        Vector3 targetVelocity = moveDir * currentSpeed;
-        Vector3 velocity = rb.linearVelocity;
-        Vector3 velocityChange = targetVelocity - new Vector3(velocity.x, 0, velocity.z);
-
-        velocityChange.x = Mathf.Clamp(velocityChange.x, -maxVelocityChange, maxVelocityChange);
-        velocityChange.z = Mathf.Clamp(velocityChange.z, -maxVelocityChange, maxVelocityChange);
-
-        if (moveDir.magnitude > 0.1f)
+    private void HandleCrouch()
+    {
+        if (Input.GetKeyDown(crouchKey))
         {
-            rb.AddForce(velocityChange, ForceMode.VelocityChange);
+            ToggleCrouch();
+        }
+    }
+
+    private void ToggleCrouch()
+    {
+        if (isCrouched)
+        {
+            controller.height = standingHeight;
         }
         else
         {
-            Vector3 current = rb.linearVelocity;
-            current.x = Mathf.Lerp(current.x, 0, Time.fixedDeltaTime * stopSmoothness);
-            current.z = Mathf.Lerp(current.z, 0, Time.fixedDeltaTime * stopSmoothness);
-            rb.linearVelocity = current;
+            controller.height = crouchingHeight;
         }
-        HandleFootsteps(moveDir);
+
+        isCrouched = !isCrouched;
     }
 
-    // --- Sprint Logic ---
     private void HandleSprint()
     {
         if (unlimitedSprint)
         {
-            isSprinting = Input.GetKey(sprintKey);
+            isSprinting = Input.GetKey(sprintKey) && !isCrouched;
             return;
         }
 
         bool shiftHeld = Input.GetKey(sprintKey);
 
-        if (shiftHeld && canSprint && sprintRemaining > 0f)
+        if (shiftHeld && canSprint && sprintRemaining > 0f && !isCrouched)
         {
             isSprinting = true;
-            sprintRemaining -= Time.fixedDeltaTime;
+
+            sprintRemaining -= Time.deltaTime;
 
             if (sprintRemaining <= 0f)
             {
@@ -190,87 +198,56 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            sprintRemaining += Time.fixedDeltaTime / sprintCooldown;
+            isSprinting = false;
+
+            sprintRemaining += Time.deltaTime / sprintCooldown;
             sprintRemaining = Mathf.Clamp(sprintRemaining, 0f, sprintDuration);
 
             if (sprintRemaining >= sprintDuration)
+            {
                 canSprint = true;
-
-            
-            isSprinting = false;
+            }
         }
 
         if (useSprintBar && sprintSlider != null)
+        {
             sprintSlider.value = sprintRemaining / sprintDuration;
-    }
-
-    private void Jump()
-    {
-        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
-        rb.AddForce(Vector3.up * jumpPower, ForceMode.Impulse);
-        isGrounded = false;
-
-        if (isCrouched)
-            ToggleCrouch();
-    }
-
-    private void ToggleCrouch()
-    {
-        if (isCrouched)
-        {
-            transform.localScale = originalScale;
-            walkSpeed /= speedReduction;
         }
-        else
-        {
-            transform.localScale = new Vector3(originalScale.x, crouchHeight, originalScale.z);
-            walkSpeed *= speedReduction;
-        }
-
-        isCrouched = !isCrouched;
     }
 
-    private void CheckGround()
+    private void HandleFootsteps()
     {
-        Vector3 origin = new Vector3(transform.position.x, transform.position.y - (transform.localScale.y / 2f), transform.position.z);
-        isGrounded = Physics.Raycast(origin, Vector3.down, 0.75f);
-    }
-    private void HandleFootsteps(Vector3 moveDir){
-        bool isMoving = moveDir.magnitude > 0.5f;
+        float x = Input.GetAxisRaw("Horizontal");
+        float z = Input.GetAxisRaw("Vertical");
 
-        if(isGrounded && isMoving)
+        bool isMoving = Mathf.Abs(x) > 0.1f || Mathf.Abs(z) > 0.1f;
+
+        if (controller.isGrounded && isMoving)
         {
-            if(isSprinting)
+            if (isSprinting)
             {
-                if(!runAudio.isPlaying)
-                {
+                if (!runAudio.isPlaying)
                     runAudio.Play();
-                }
-                if (walkAudio.isPlaying){
+
+                if (walkAudio.isPlaying)
                     walkAudio.Stop();
-                }
             }
             else
             {
-                if(!walkAudio.isPlaying)
-                {
+                if (!walkAudio.isPlaying)
                     walkAudio.Play();
-                }
-                if (runAudio.isPlaying){
+
+                if (runAudio.isPlaying)
                     runAudio.Stop();
-                }
             }
         }
         else
         {
             if (walkAudio.isPlaying)
-            {
                 walkAudio.Stop();
-            }
+
             if (runAudio.isPlaying)
-            {
                 runAudio.Stop();
-            }
         }
     }
 
@@ -280,8 +257,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (locked)
         {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+            velocity = Vector3.zero;
         }
     }
 }
