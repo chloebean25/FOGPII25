@@ -43,22 +43,27 @@ public class QuickTimeEventManager : MonoBehaviour
             qteText.text = expectedLetter.ToString();
 
             RectTransform rect = qteText.transform.parent.GetComponent<RectTransform>();
-            Canvas canvas = qteUIPanel.GetComponentInParent<Canvas>();
-            RectTransform canvasRect = canvas.GetComponent<RectTransform>();
+            RectTransform canvasRect = qteUIPanel.GetComponentInParent<Canvas>().GetComponent<RectTransform>();
 
-            float halfWidth = canvasRect.rect.width / 2f - edgePadding;
-            float halfHeight = canvasRect.rect.height / 2f - edgePadding;
+            Vector2 panelSize = rect.rect.size;
 
-            float randomX = Random.Range(-halfWidth, halfWidth);
-            float randomY = Random.Range(-halfHeight, halfHeight);
+            
+            float halfWidth = (canvasRect.rect.width * 0.5f) - edgePadding - (panelSize.x * 0.5f);
+            float halfHeight = (canvasRect.rect.height * 0.5f) - edgePadding - (panelSize.y * 0.5f);
 
-            rect.anchoredPosition = new Vector2(randomX, randomY);
+            Vector2 randomPos = new Vector2(
+                Random.Range(-halfWidth, halfWidth),
+                Random.Range(-halfHeight, halfHeight)
+            );
+
+            rect.anchoredPosition = randomPos;
         }
 
         float timer = 0f;
         bool success = false;
 
-        KeyCode expectedKey = (KeyCode)System.Enum.Parse(typeof(KeyCode), expectedLetter.ToString());
+        KeyCode expectedKey =
+            (KeyCode)System.Enum.Parse(typeof(KeyCode), expectedLetter.ToString());
 
         while (timer < qteDuration)
         {
@@ -91,7 +96,6 @@ public class QuickTimeEventManager : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-
         Time.timeScale = 0f;
     }
 
@@ -105,20 +109,18 @@ public class QuickTimeEventManager : MonoBehaviour
 
         foreach (var anim in slowAnimators)
         {
-            anim.speed = 1f;  
-            anim.Rebind();    
-            anim.Update(0f);   
+            anim.speed = 1f;
+            anim.Rebind();
+            anim.Update(0f);
             anim.Play(anim.GetCurrentAnimatorStateInfo(0).shortNameHash, 0, 0f);
         }
 
         Time.timeScale = 1f;
-
         isFailed = false;
     }
 
-     public void Quit()
+    public void Quit()
     {
         Application.Quit();
     }
-
 }

@@ -1,28 +1,47 @@
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
 
 public class TextDisplay : MonoBehaviour
 {
     public GameObject displayText;
     public GameObject responseText;
-    
-    void Start(){
+
+    private bool playerInRange = false;
+    private bool hasKnocked = false;
+
+    void Start()
+    {
         displayText.SetActive(false);
         responseText.SetActive(false);
     }
-    void OnTriggerStay(Collider player){
-        if(player.gameObject.tag=="Player"){
-            displayText.SetActive(true);
-            if(Input.GetKeyDown(KeyCode.F)){
-                responseText.SetActive(true);
-                Debug.Log("You pressed F");
-            }
+
+    void Update()
+    {
+        if (playerInRange && !hasKnocked && Input.GetKeyDown(KeyCode.F))
+        {
+            displayText.SetActive(false);  
+            responseText.SetActive(true);  
+            hasKnocked = true;
+
+            Debug.Log("Player knocked.");
         }
     }
 
-    void OnTriggerExit(Collider player){
-        displayText.SetActive(false);
-        responseText.SetActive(false);
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player") && !hasKnocked)
+        {
+            playerInRange = true;
+            displayText.SetActive(true);
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInRange = false;
+            displayText.SetActive(false);
+            responseText.SetActive(false);
+        }
     }
 }

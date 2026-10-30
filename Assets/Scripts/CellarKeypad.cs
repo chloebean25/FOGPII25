@@ -9,6 +9,7 @@ public class CellarKeypad : MonoBehaviour
 
     [Header("References")]
     public GameObject keypadUI;
+    public Flashlight flashlight;
     public TMP_InputField inputField; 
     public PlayerMovement playerMovement;
     public string correctCode = "STAY LOW DON'T GO HATE THEM SACRIFICE";
@@ -76,6 +77,7 @@ public class CellarKeypad : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        flashlight.enabled = false;
 
         inputField.text = "";
         inputField.ActivateInputField();
@@ -93,5 +95,6 @@ public class CellarKeypad : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        flashlight.enabled = true;
     }
 }
